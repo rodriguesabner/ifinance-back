@@ -3,56 +3,77 @@ package service
 import (
 	"context"
 	"github.com/golang-jwt/jwt"
+	"github.com/google/uuid"
 	"github.com/rodriguesabner/ifinance-back/database"
 	"go.mongodb.org/mongo-driver/bson"
-	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
-	"log"
 	"time"
 )
 
 type Transaction struct {
-	ID          primitive.ObjectID `bson:"_id"`
-	USERID      string             `json:"user_id"`
-	NAME        string             `json:"name"`
-	PRICE       string             `json:"price"`
-	CATEGORY    string             `json:"category"`
-	DATE        time.Time          `json:"date"`
-	TYPE        string             `json:"type"`
-	DESCRIPTION string             `json:"description"`
-	PAID        bool               `json:"paid"`
+	ID          string    `bson:"_id"`
+	USERID      string    `json:"user_id"`
+	NAME        string    `json:"name"`
+	PRICE       string    `json:"price"`
+	CATEGORY    string    `json:"category"`
+	DATE        time.Time `json:"date"`
+	TYPE        string    `json:"type"`
+	DESCRIPTION string    `json:"description"`
+	PAID        bool      `json:"paid"`
 }
 
-func GetAllFinances(ctx context.Context, mapClaimsUser *jwt.MapClaims) ([]Transaction, error) {
+type TransactionToCreate struct {
+	ID          string    `bson:"_id"`
+	USERID      string    `json:"user_id"`
+	NAME        string    `json:"name"`
+	PRICE       string    `json:"price"`
+	CATEGORY    string    `json:"category"`
+	DATE        time.Time `bson:"date"`
+	TYPE        string    `json:"type"`
+	DESCRIPTION string    `json:"description"`
+	PAID        bool      `json:"paid"`
+}
+
+type DatesFilter struct {
+	YEAR  int `json:"year"`
+	MONTH int `json:"month"`
+}
+
+func GetAllTransactions(ctx context.Context, mapClaimsUser *jwt.MapClaims, dates DatesFilter) ([]Transaction, error) {
 	collection := database.GetCollection("transactions")
 
 	userId := (*mapClaimsUser)["id"].(string)
-	filter := bson.M{"userid": userId}
 
-	cursor, err := collection.Find(ctx, filter)
+	pipeline := mongo.Pipeline{
+		{{"$match", bson.D{
+			{"userid", userId},
+			{"$expr", bson.D{
+				{"$and", bson.A{
+					bson.D{{"$eq", bson.A{bson.D{{"$month", "$date"}}, dates.MONTH}}},
+					bson.D{{"$eq", bson.A{bson.D{{"$year", "$date"}}, dates.YEAR}}},
+				}},
+			}},
+		}}},
+	}
+
+	cursor, err := collection.Aggregate(ctx, pipeline)
 	if err != nil {
-		log.Fatal(err)
+		return nil, err
 	}
 	defer cursor.Close(ctx)
 
-	var results []Transaction
-	for cursor.Next(ctx) {
-		var document Transaction
-		if err := cursor.Decode(&document); err != nil {
-			log.Fatal(err)
-		}
-		results = append(results, document)
+	var transactions []Transaction
+	if err = cursor.All(ctx, &transactions); err != nil {
+		return nil, err
 	}
 
-	if err := cursor.Err(); err != nil {
-		log.Fatal(err)
-	}
-
-	return results, nil
+	return transactions, nil
 }
 
-func CreateTransaction(ctx context.Context, transaction Transaction) (*mongo.InsertOneResult, error) {
+func CreateTransaction(ctx context.Context, transaction TransactionToCreate) (*mongo.InsertOneResult, error) {
 	collection := database.GetCollection("transactions")
+	transaction.ID = uuid.New().String()
+
 	result, err := collection.InsertOne(ctx, transaction)
 
 	if err != nil {

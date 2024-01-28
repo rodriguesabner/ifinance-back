@@ -6,25 +6,34 @@ import (
 	"github.com/golang-jwt/jwt"
 	"github.com/rodriguesabner/ifinance-back/service"
 	"net/http"
+	"strconv"
 	"time"
 )
 
-func GetAllFinances(w http.ResponseWriter, r *http.Request) {
+func GetAllTransactions(w http.ResponseWriter, r *http.Request) {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
+	year, err := strconv.Atoi(r.URL.Query().Get("year"))
+	month, err := strconv.Atoi(r.URL.Query().Get("month"))
+
+	dates := struct {
+		YEAR  int
+		MONTH int
+	}{year, month}
+
 	mapClaimsUser := r.Context().Value("user").(*jwt.MapClaims)
-	expenses, err := service.GetAllFinances(ctx, mapClaimsUser)
+	transactions, err := service.GetAllTransactions(ctx, mapClaimsUser, service.DatesFilter(dates))
 	if err != nil {
 		RespondWithError(w, http.StatusInternalServerError, "Internal Error")
 		return
 	}
 
-	RespondWithJSON(w, http.StatusOK, expenses)
+	RespondWithJSON(w, http.StatusOK, transactions)
 }
 
 func CreateTransaction(w http.ResponseWriter, r *http.Request) {
-	var transaction service.Transaction
+	var transaction service.TransactionToCreate
 	err := json.NewDecoder(r.Body).Decode(&transaction)
 	if err != nil {
 		RespondWithError(w, http.StatusInternalServerError, err.Error())
@@ -35,7 +44,7 @@ func CreateTransaction(w http.ResponseWriter, r *http.Request) {
 	defer cancel()
 
 	mapClaimsUser := r.Context().Value("user").(*jwt.MapClaims)
-	typeTransaction := r.URL.Query().Get("type") //expense OR income
+	typeTransaction := r.URL.Query().Get("type") //outcome OR income
 
 	if typeTransaction == "" {
 		RespondWithError(w, http.StatusExpectationFailed, "Type transaction not found")
