@@ -114,3 +114,17 @@ func UpdateTransaction(ctx context.Context, transaction TransactionToCreate) (*m
 
 	return result, nil
 }
+
+func DeleteTransaction(ctx context.Context, idTransaction string) (*mongo.DeleteResult, error) {
+	collection := database.GetCollection("transactions")
+
+	filter := bson.M{"_id": idTransaction}
+
+	result, err := collection.DeleteOne(ctx, filter)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return result, nil
+}

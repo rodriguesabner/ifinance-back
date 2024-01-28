@@ -14,7 +14,7 @@ func TransactionsRoutes() *chi.Mux {
 		router.Get("/", api.GetAllTransactions)
 		router.Post("/", api.CreateTransaction)
 		router.Patch("/{id}", api.UpdateTransaction)
-		router.Delete("/", api.DeleteTransaction)
+		router.Delete("/{id}", api.DeleteTransaction)
 	})
 
 	return router

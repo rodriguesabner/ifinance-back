@@ -104,28 +104,12 @@ func UpdateTransaction(w http.ResponseWriter, r *http.Request) {
 }
 
 func DeleteTransaction(w http.ResponseWriter, r *http.Request) {
-	var transaction service.TransactionToCreate
-	err := json.NewDecoder(r.Body).Decode(&transaction)
-	if err != nil {
-		RespondWithError(w, http.StatusInternalServerError, err.Error())
-		return
-	}
-
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
-	mapClaimsUser := r.Context().Value("user").(*jwt.MapClaims)
-	typeTransaction := r.URL.Query().Get("type") //outcome OR income
+	idTransaction := chi.URLParam(r, "id")
 
-	if typeTransaction == "" {
-		RespondWithError(w, http.StatusExpectationFailed, "Type transaction not found")
-		return
-	}
-
-	transaction.TYPE = typeTransaction
-	transaction.USERID = (*mapClaimsUser)["id"].(string)
-
-	result, err := service.CreateTransaction(ctx, transaction)
+	result, err := service.DeleteTransaction(ctx, idTransaction)
 	if err != nil {
 		RespondWithError(w, http.StatusInternalServerError, err.Error())
 		return
