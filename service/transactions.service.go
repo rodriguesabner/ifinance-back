@@ -34,24 +34,34 @@ type TransactionToCreate struct {
 	PAID        bool      `json:"paid"`
 }
 
-type DatesFilter struct {
-	YEAR  int `json:"year"`
-	MONTH int `json:"month"`
+type QueryFilter struct {
+	YEAR     int    `json:"year"`
+	MONTH    int    `json:"month"`
+	CATEGORY string `json:"category"`
 }
 
-func GetAllTransactions(ctx context.Context, mapClaimsUser *jwt.MapClaims, dates DatesFilter) ([]Transaction, error) {
+func GetAllTransactions(ctx context.Context, mapClaimsUser *jwt.MapClaims, queryFilter QueryFilter) ([]Transaction, error) {
 	collection := database.GetCollection("transactions")
 
 	userId := (*mapClaimsUser)["id"].(string)
+	andConditions := bson.A{}
+
+	if queryFilter.MONTH != 0 {
+		andConditions = append(andConditions, bson.D{{"$eq", bson.A{bson.D{{"$month", "$date"}}, queryFilter.MONTH}}})
+	}
+	if queryFilter.YEAR != 0 {
+		andConditions = append(andConditions, bson.D{{"$eq", bson.A{bson.D{{"$year", "$date"}}, queryFilter.YEAR}}})
+	}
+
+	if queryFilter.CATEGORY != "" {
+		andConditions = append(andConditions, bson.D{{"$eq", bson.A{"$category", queryFilter.CATEGORY}}})
+	}
 
 	pipeline := mongo.Pipeline{
 		{{"$match", bson.D{
 			{"userid", userId},
 			{"$expr", bson.D{
-				{"$and", bson.A{
-					bson.D{{"$eq", bson.A{bson.D{{"$month", "$date"}}, dates.MONTH}}},
-					bson.D{{"$eq", bson.A{bson.D{{"$year", "$date"}}, dates.YEAR}}},
-				}},
+				{"$and", andConditions},
 			}},
 		}}},
 	}
@@ -75,6 +85,28 @@ func CreateTransaction(ctx context.Context, transaction TransactionToCreate) (*m
 	transaction.ID = uuid.New().String()
 
 	result, err := collection.InsertOne(ctx, transaction)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return result, nil
+}
+
+func UpdateTransaction(ctx context.Context, transaction TransactionToCreate) (*mongo.UpdateResult, error) {
+	collection := database.GetCollection("transactions")
+
+	filter := bson.M{"_id": transaction.ID}
+
+	update := bson.M{"$set": bson.M{
+		"name":        transaction.NAME,
+		"price":       transaction.PRICE,
+		"category":    transaction.CATEGORY,
+		"date":        transaction.DATE,
+		"description": transaction.DESCRIPTION,
+		"paid":        transaction.PAID,
+	}}
+	result, err := collection.UpdateOne(ctx, filter, update)
 
 	if err != nil {
 		return nil, err

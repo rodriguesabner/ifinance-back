@@ -13,6 +13,8 @@ func TransactionsRoutes() *chi.Mux {
 		router.Use(middleware.JWTMiddleware)
 		router.Get("/", api.GetAllTransactions)
 		router.Post("/", api.CreateTransaction)
+		router.Patch("/{id}", api.UpdateTransaction)
+		router.Delete("/", api.DeleteTransaction)
 	})
 
 	return router
