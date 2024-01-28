@@ -17,7 +17,7 @@ const DbName = "ifinance"
 
 func ConnectDB() {
 	serverAPI := options.ServerAPI(options.ServerAPIVersion1)
-	mongoURL := os.Getenv("PORT")
+	mongoURL := os.Getenv("MONGO_URL")
 
 	opts := options.Client().ApplyURI(mongoURL).SetServerAPIOptions(serverAPI)
 

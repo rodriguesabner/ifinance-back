@@ -8,8 +8,8 @@ import (
 func UserRoutes() *chi.Mux {
 	router := chi.NewRouter()
 
-	router.Get("/", api.GetUserHandler)
-	router.Post("/", api.CreateUserHandler)
+	router.Post("/login", api.LoginUserHandler)
+	router.Post("/register", api.CreateUserHandler)
 
 	return router
 }

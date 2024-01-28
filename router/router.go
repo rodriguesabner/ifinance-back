@@ -29,6 +29,7 @@ func SetupRouter() *chi.Mux {
 
 	apiRouter.Get("/health", api.HealthHandler)
 	apiRouter.Mount("/user", UserRoutes())
+	apiRouter.Mount("/finances", TransactionsRoutes())
 
 	return router
 }

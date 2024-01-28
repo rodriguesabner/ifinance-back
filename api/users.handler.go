@@ -8,17 +8,24 @@ import (
 	"time"
 )
 
-func GetUserHandler(w http.ResponseWriter, r *http.Request) {
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-	defer cancel()
-
-	users, err := service.GetAllUsers(ctx)
+func LoginUserHandler(w http.ResponseWriter, r *http.Request) {
+	var user service.User
+	err := json.NewDecoder(r.Body).Decode(&user)
 	if err != nil {
 		RespondWithError(w, http.StatusInternalServerError, "Internal Error")
 		return
 	}
 
-	RespondWithJSON(w, http.StatusOK, users)
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	response, err := service.LoginUser(ctx, user)
+	if err != nil {
+		RespondWithError(w, http.StatusInternalServerError, "Internal Error")
+		return
+	}
+
+	RespondWithJSON(w, http.StatusOK, response)
 }
 
 func CreateUserHandler(w http.ResponseWriter, r *http.Request) {
