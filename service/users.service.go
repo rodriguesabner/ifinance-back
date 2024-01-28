@@ -9,8 +9,8 @@ import (
 )
 
 type User struct {
-	CPF string `json:"email"`
-	RI  string `json:"password"`
+	EMAIL    string `json:"email"`
+	PASSWORD string `json:"password"`
 }
 
 var collection *mongo.Collection = database.GetCollection("users")
