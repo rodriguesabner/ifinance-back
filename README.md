@@ -1,5 +1,9 @@
 # ifinance-back
 
+application (React Native)
+
+https://github.com/rodriguesabner/ifinance-app
+
 ## Overview
 `ifinance-back` is a backend application for the iFinance app. It's built using Go and is designed to handle user data related to personal finance management. The core functionalities include managing expenses, incomes, and savings. Additionally, it supports user authentication with email and password to ensure data is personalized and secure.
 
