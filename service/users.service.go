@@ -21,12 +21,13 @@ type UserTokenResponse struct {
 
 func LoginUser(ctx context.Context, user User) (UserTokenResponse, error) {
 	collection := database.GetCollection("users")
-	filter := bson.M{"email": user.EMAIL}
+	filter := bson.M{"email": user.EMAIL, "password": user.PASSWORD}
 
 	err := collection.FindOne(ctx, filter).Decode(&user)
 
 	if err != nil {
-		log.Fatal(err)
+		log.Println(err)
+		return UserTokenResponse{}, err
 	}
 
 	userId := user.ID.Hex()
@@ -71,6 +72,7 @@ func CreateUser(ctx context.Context, user User) (UserTokenResponse, error) {
 
 	if err != nil {
 		log.Fatal(err)
+		return UserTokenResponse{}, err
 	}
 
 	userId := result.InsertedID.(primitive.ObjectID).Hex()

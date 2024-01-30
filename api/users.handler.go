@@ -21,7 +21,7 @@ func LoginUserHandler(w http.ResponseWriter, r *http.Request) {
 
 	response, err := service.LoginUser(ctx, user)
 	if err != nil {
-		RespondWithError(w, http.StatusInternalServerError, "Internal Error")
+		RespondWithError(w, http.StatusInternalServerError, "Invalid Credentials")
 		return
 	}
 
